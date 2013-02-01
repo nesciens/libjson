@@ -161,7 +161,7 @@ enum actions {
 static const uint8_t state_transition_table[NR_STATES][NR_CLASSES] = {
 /*             white                                                                            ABCDF  other    */
 /*         sp nl |  {  }  [  ]  :  ,  "  \  /  +  -  .  0  19 a  b  c  d  e  f  l  n  r  s  t  u  |  E  |  *  # */
-/*GO*/ PT_(GO,GO,GO,OB,__,AB,__,__,__,__,__,CB,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,YB),
+/*GO*/ PT_(GO,GO,GO,OB,__,AB,__,__,__,_S,__,CB,__,MX,__,ZX,IX,__,__,__,__,__,F1,__,N1,__,__,T1,__,__,__,__,__,YB),
 /*OK*/ PT_(OK,OK,OK,__,OE,__,AE,__,SP,__,__,CB,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,YB),
 /*_O*/ PT_(_O,_O,_O,__,OE,__,__,__,__,_S,__,CB,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,YB),
 /*_K*/ PT_(_K,_K,_K,__,__,__,__,__,__,_S,__,CB,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,YB),
@@ -1014,13 +1014,17 @@ int json_parser_dom_callback(void *userdata, int type, const char *data, uint32_
 	case JSON_NULL:
 	case JSON_TRUE:
 	case JSON_FALSE:
-		stack = &(ctx->stack[ctx->stack_offset - 1]);
 		v = ctx->create_data(type, data, length);
 		if (!v)
 			return JSON_ERROR_CALLBACK;
-		if (ctx->append(stack->val, stack->key, stack->key_length, v))
-			return JSON_ERROR_CALLBACK;
-		free(stack->key);
+		if (ctx->stack_offset > 0) {
+			stack = &(ctx->stack[ctx->stack_offset - 1]);
+			if (ctx->append(stack->val, stack->key, stack->key_length, v))
+				return JSON_ERROR_CALLBACK;
+			free(stack->key);
+		} else {
+			ctx->root_structure = v;
+		}
 		break;
 	}
 	return 0;
